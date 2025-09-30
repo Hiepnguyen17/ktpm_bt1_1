@@ -9,8 +9,14 @@ class Login extends Component {
       username: "",
       password: "",
     };
+  }
 
-    
+  componentDidMount() {
+    // Kiểm tra nếu đã đăng nhập thì redirect về trang chủ
+    const accountName = localStorage.getItem("accountName");
+    if (accountName) {
+      this.props.navigate("/");
+    }
   }
   handleChange = (e) => {
   this.setState({
@@ -29,11 +35,21 @@ handleSubmit = async (e) => {
       { withCredentials: true }
     );
 
-    if (res.status === 200) {
-      localStorage.setItem("accountName", username);
+    if (res.status === 200 && res.data.user) {
+      const userData = res.data.user;
+      // Lưu thông tin user từ response vào localStorage
+      localStorage.setItem("accountName", userData.username);
+      localStorage.setItem("userId", userData.id);
+      localStorage.setItem("userRole", userData.role);
+      localStorage.setItem("userPermissions", JSON.stringify({
+        create: userData.create,
+        read: userData.read,
+        write: userData.write
+      }));
+      
       alert("Đăng nhập thành công!");
 
-      if (res.data.role === "ROLE_ADMIN") {
+      if (userData.role === "ROLE_ADMIN") {
         this.props.navigate("/admin");
       } else {
         this.props.navigate("/user");
