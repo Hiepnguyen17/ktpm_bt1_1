@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import { withRouter } from "../withRouter";
-import axios from "axios";   // <-- phải import axios
+import axios from "axios";
 
 class Login extends Component {
   constructor(props) {
@@ -9,7 +9,14 @@ class Login extends Component {
       username: "",
       password: "",
     };
+
+    
   }
+  handleChange = (e) => {
+  this.setState({
+    [e.target.name]: e.target.value
+  });
+};
 
 handleSubmit = async (e) => {
   e.preventDefault();
@@ -18,7 +25,7 @@ handleSubmit = async (e) => {
   try {
     const res = await axios.post(
       "http://localhost:8080/login",
-      { username, password }, // gửi JSON
+      { username, password },
       { withCredentials: true }
     );
 
@@ -102,5 +109,6 @@ handleSubmit = async (e) => {
     );
   }
 }
+
 
 export default withRouter(Login);
