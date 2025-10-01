@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import React, { Component } from "react";
 import { withRouter } from "../withRouter";
 import axios from "axios";
