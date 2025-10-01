@@ -122,7 +122,7 @@ class User extends Component {
       }
     } catch (err) {
       console.error("Upload error:", err);
-      alert(err.response?.data?.message || "Upload thất bại!");
+      alert(err.response?.data?.message || "Bạn không có quyền upload");
     }
   };
 
@@ -319,6 +319,13 @@ class User extends Component {
                     <span style={{ flex: 1 }}>{file.name}</span>
                     <button
                       onClick={async () => {
+                        // Kiểm tra quyền read từ localStorage
+                        const userPermissions = JSON.parse(localStorage.getItem('userPermissions') || '{}');
+                        if (!userPermissions.read) {
+                          alert('Bạn không có quyền tải file!');
+                          return;
+                        }
+
                         try {
                           // Lấy SAS URL để download
                           const blobName = file.name; // Chỉ lấy tên file, không lấy full path
@@ -329,8 +336,12 @@ class User extends Component {
                             await this.downloadFile(response.data.sasUrl, file.name);
                           }
                         } catch (error) {
-                          console.error('Error getting download URL:', error);
-                          alert('Không thể tải file. Vui lòng thử lại sau.');
+                          if (error.response?.status === 403) {
+                            alert('Bạn không có quyền tải file này!');
+                          } else {
+                            console.error('Error getting download URL:', error);
+                            alert('Không thể tải file. Vui lòng thử lại sau.');
+                          }
                         }
                       }}
                       style={{

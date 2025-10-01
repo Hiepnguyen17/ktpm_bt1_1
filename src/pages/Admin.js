@@ -1,5 +1,6 @@
 import React, { Component } from "react";
 import { withRouter } from "../withRouter";
+import axios from "axios";
 
 class AdminPage extends Component {
   constructor(props) {
@@ -8,24 +9,45 @@ class AdminPage extends Component {
       showLogout: false,
       username: localStorage.getItem("accountName") || "admin",
       search: "",
-      users: [
-        { id: 1, username: "Tanmotcu", role: "USER", write: false, create: false, read: false },
-        { id: 2, username: "admin", role: "ADMIN", write: false, create: false, read: false },
-        { id: 3, username: "Cumottan", role: "USER", write: false, create: false, read: false },
-      ],
+      users: [],
+      loading: false,
+      error: null
     };
   }
 
+  loadUsers = async () => {
+    try {
+      this.setState({ loading: true });
+      const response = await axios.get('http://localhost:8080/admin/user-list', {
+        withCredentials: true
+      });
+      this.setState({ users: response.data, error: null });
+    } catch (error) {
+      console.error('Error loading users:', error);
+      this.setState({ error: 'Không thể tải danh sách người dùng' });
+    } finally {
+      this.setState({ loading: false });
+    }
+  };
+
   componentDidMount() {
-    localStorage.setItem("accountName", this.state.username);
+    // Kiểm tra quyền admin trước khi load users
+    const userRole = localStorage.getItem('userRole');
+    if (userRole !== 'ROLE_ADMIN') {
+      alert('Bạn không có quyền truy cập trang này!');
+      this.props.navigate('/login');
+      return;
+    }
+    this.loadUsers();
   }
 
   handleMouseEnter = () => this.setState({ showLogout: true });
   handleMouseLeave = () => this.setState({ showLogout: false });
 
   handleLogout = () => {
-    localStorage.removeItem("accountName");
-    this.props.navigate("/");
+    // Xóa tất cả dữ liệu trong localStorage
+    localStorage.clear();
+    this.props.navigate("/login");
   };
 
   togglePermission = (id, field) => {
@@ -36,8 +58,26 @@ class AdminPage extends Component {
     }));
   };
 
-  setRule = (user) => {
-    alert(`Send rule to ${user.username}: ${JSON.stringify(user)}`);
+  setRule = async (user) => {
+    try {
+      const response = await axios.post(
+        `http://localhost:8080/admin/permission/${user.id}`,
+        {
+          create: user.create,
+          read: user.read,
+          write: user.write
+        },
+        { withCredentials: true }
+      );
+
+      if (response.status === 200) {
+        alert('Cập nhật quyền thành công!');
+        this.loadUsers(); // Reload danh sách để cập nhật UI
+      }
+    } catch (error) {
+      console.error('Error setting permissions:', error);
+      alert('Không thể cập nhật quyền. Vui lòng thử lại sau.');
+    }
   };
 
   handleSearch = (e) => {
@@ -46,7 +86,7 @@ class AdminPage extends Component {
 
   renderHeader() {
   const avatarUrl =
-    "https://i.pinimg.com/originals/68/76/99/6876993a25a8fc274cc09aee12171034.jpg";
+    "";
 
   return (
     <div
@@ -153,8 +193,12 @@ class AdminPage extends Component {
             />
           </div>
 
+          {/* Loading and Error states */}
+          {this.state.loading && <p>Đang tải danh sách người dùng...</p>}
+          {this.state.error && <p style={{ color: 'red' }}>{this.state.error}</p>}
+
           {/* User table */}
-          <table
+          {!this.state.loading && !this.state.error && (<table
             style={{
               width: "100%",
               borderCollapse: "collapse",
@@ -223,7 +267,7 @@ class AdminPage extends Component {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table>)}
         </div>
       </div>
     );
