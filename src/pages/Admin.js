@@ -14,7 +14,6 @@ class AdminPage extends Component {
       error: null
     };
   }
-
   loadUsers = async () => {
     try {
       this.setState({ loading: true });
